@@ -5,6 +5,7 @@ import de.seuhd.campuscoffee.domain.model.CampusType;
 import de.seuhd.campuscoffee.domain.model.PosType;
 import de.seuhd.campuscoffee.domain.ports.PosService;
 import io.cucumber.java.*;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -91,7 +92,11 @@ public class CucumberPosSteps {
         assertThat(retrievedPosList).isEmpty();
     }
 
-    // TODO: Add Given step for new scenario
+    @Given("a POS list with the following elements")
+    public void aPosListWithTheFollowingElements(List<PosDto> posList) {
+        createdPosList = createPos(posList);
+        assertThat(createdPosList).size().isEqualTo(posList.size());
+    }
 
     // When -----------------------------------------------------------------------
 
@@ -101,7 +106,17 @@ public class CucumberPosSteps {
         assertThat(createdPosList).size().isEqualTo(posList.size());
     }
 
-    // TODO: Add When step for new scenario
+    @When("I update the POS {string} with the description {string}")
+    public void updatePosWithTheFollowingValues(String posName, String newDescription) {
+        PosDto posToUpdate = retrievePosByName(posName);
+        updatedPos = posToUpdate.toBuilder()
+                .description(newDescription)
+                .build();
+        
+        List<PosDto> updatedPosList = updatePos(List.of(updatedPos));
+        assertThat(updatedPosList).isNotEmpty();
+        assertThat(updatedPos.name()).isEqualTo(posName);
+    }
 
     // Then -----------------------------------------------------------------------
 
@@ -113,5 +128,21 @@ public class CucumberPosSteps {
                 .containsExactlyInAnyOrderElementsOf(createdPosList);
     }
 
-    // TODO: Add Then step for new scenario
+    @Then("the POS {string} should contain the updated pos")
+    public void thePosShouldContainTheUpdatedPos(String name) {
+        PosDto retrievedPos = retrievePosByName(name);
+        assertThat(retrievedPos)
+                .usingRecursiveComparison()
+                .ignoringFields("id", "createdAt", "updatedAt")
+                .isEqualTo(updatedPos);
+    }
+
+    @And("the POS list should be in the same order")
+    public void thePosListShouldBeInTheSameOrder() {
+        List<PosDto> retrievedPosList = retrievePos();
+        assertThat(retrievedPosList)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "createdAt", "updatedAt", "description")
+                .containsExactlyInAnyOrderElementsOf(createdPosList);
+    }
+
 }
